@@ -30,27 +30,10 @@ public class App {
 		properties.setProperty("group.id", "customerAnalytics");
 		LOG.info("Properties set {}", properties);
 
-		FlinkKafkaConsumer<String> kafkaSource = new FlinkKafkaConsumer<>("customer.create", new SimpleStringSchema(), properties);
+		FlinkKafkaConsumer<String> kafkaSource = new FlinkKafkaConsumer<>("test", new SimpleStringSchema(), properties);
 		DataStream<String> stream = see.addSource(kafkaSource);
 
-		LOG.info("stream created, {}", stream);
-
-		KeyedStream<Customer, String> customerPerCountryStream = stream.map(data -> {
-			try {
-				return OM.readValue(data, Customer.class);
-			} catch (Exception e) {
-				LOG.info("exception reading data: " + data);
-				return null;
-			}
-		}).filter(Objects::nonNull).keyBy(Customer::getCountry);
-
-		DataStream<Tuple2<String, Long>> result = customerPerCountryStream.timeWindow(Time.seconds(5))
-				.aggregate(new CustomerAggregatorByCountry());
-
-		result.print();
-
-		see.execute("CustomerRegistrationApp");
-
+		stream.print();
 	}
 
 }
